@@ -1,109 +1,104 @@
-﻿#pragma comment(lib, "Opengl32.lib")
-#include <GLFW/glfw3.h>
-#include <iostream>
+﻿#pragma comment (lib, "OpenGL32.lib")
 
-// 색깔 상수 정의
-const float RED[] = { 1.0f, 0.0f, 0.0f, 0.0f };
-const float GREEN[] = { 0.0f, 1.0f, 0.0f, 0.0f };
-const float BLUE[] = { 0.0f, 0.0f, 1.0f, 0.0f };
-const float MAGENTA[] = { 1.0f, 0.0f, 1.0f, 0.0f };
-const float BLACK[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+#include <GLFW/glfw3.h> 
+#include <iostream> 
 
-// 현재 색깔을 저장하는 변수
-const float* currentColor = BLACK;
+bool rightbtnDown = false; 
+bool leftbtnDown = false; 
+bool rightbtnDownDragging = false;
+bool leftbtnDownDragging = false; 
+double lastYPos = 0.0; // 마지막 Y 위치 저장 변수
 
-// GLFW 오류 콜백 함수
-void errorCallback(int error, const char* description)
-{
-    std::cerr << "GLFW Error: " << description << std::endl;
-}
+double xpos = 0.0; 
+double ypos = 0.0; 
 
-// 키 콜백 함수
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
+// 마우스 버튼 콜백 함수 정의
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+   
+    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+        if (action == GLFW_PRESS) { 
+            rightbtnDown = true;
+            rightbtnDownDragging = false; // 드래그 상태 초기화
+        }
+        else if (action == GLFW_RELEASE) // 떼어짐 이벤트
+            rightbtnDown = false; // 오른쪽 마우스 버튼이 떼어짐
+    }
+    // 왼쪽 마우스 버튼
+    else if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) { 
+            leftbtnDown = true; 
+            leftbtnDownDragging = false; // 드래그 상태 초기화
+        }
+        else if (action == GLFW_RELEASE) // 떼어짐 이벤트
+            leftbtnDown = false; // 왼쪽 마우스 버튼이 떼어짐
     }
 }
 
-// 마우스 버튼 콜백 함수
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-{
-    if (button == GLFW_MOUSE_BUTTON_RIGHT)
-    {
-        if (action == GLFW_PRESS)
-            currentColor = RED; // 마우스 오른쪽 버튼 누를 때 빨간색
-        else if (action == GLFW_RELEASE)
-            currentColor = BLACK; // 마우스 오른쪽 버튼 뗄 때 원상복구
+// 마우스 커서 위치 콜백 함수 정의
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+    // 오른쪽 마우스 버튼이 눌려 있고 드래그 중일 때
+    if (rightbtnDown && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+        rightbtnDownDragging = true; // 
+        leftbtnDownDragging = false; // 
+        glClearColor(0.0f, 0.0f, 1.0f, 1.0f); // 파란색 배경
     }
-    else if (button == GLFW_MOUSE_BUTTON_LEFT)
-    {
-        if (action == GLFW_PRESS)
-            currentColor = GREEN; // 마우스 왼쪽 버튼 누를 때 녹색
-        else if (action == GLFW_RELEASE)
-            currentColor = BLACK; // 마우스 왼쪽 버튼 뗄 때 원상복구
+    // 왼쪽 마우스 버튼이 눌려 있고 드래그 중일 때
+    else if (leftbtnDown && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        rightbtnDownDragging = false; // 
+        leftbtnDownDragging = true; // 
+        glClearColor(1.0f, 0.0f, 1.0f, 1.0f); // 보라색 배경
     }
+    else { // 그 외의 경우
+        rightbtnDownDragging = false; // 오른쪽 마우스 버튼 드래그 아님
+        lastYPos = 0.0; // 마지막 Y 위치 초기화
+    }
+
+    glClear(GL_COLOR_BUFFER_BIT); // 버퍼를 지우고 새로운 프레임을 그림
+    glfwSwapBuffers(window); // 프레임을 화면에 표시
 }
 
-// 마우스 이동 콜백 함수
-void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
-{
-    int rightButtonState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-    int leftButtonState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-
-    if (rightButtonState == GLFW_PRESS)
-    {
-        currentColor = BLUE; // 오른쪽 버튼을 누르고 드래그 중이면 파란색
-    }
-    else if (leftButtonState == GLFW_PRESS)
-    {
-        currentColor = MAGENTA; // 왼쪽 버튼을 누르고 드래그 중이면 마젠타색
-    }
-    else
-    {
-        currentColor = BLACK; // 아무 버튼도 누르지 않으면 검은색
-    }
-}
-
-int main(void)
-{
-    if (!glfwInit()) // GLFW 라이브러리 초기화
-        return -1;
-
-    GLFWwindow* window;
-    window = glfwCreateWindow(1280, 768, "MuSoeunEngine", NULL, NULL); // 1280x768 크기의 창 생성
-
-    if (!window)
-    {
-        glfwTerminate();
-        return -1;
+int main() {
+    // GLFW 초기화
+    if (!glfwInit()) {
+        std::cerr << "GLFW 초기화 실패" << std::endl; // 오류 메시지 출력
+        return -1; // 프로그램 종료
     }
 
-    // 창의 OpenGL 컨텍스트를 현재 컨텍스트로 설정
+    // GLFW 윈도우 생성
+    GLFWwindow* window = glfwCreateWindow(1280, 760, "OpenGL Window", NULL, NULL);
+    if (!window) {
+        std::cerr << "GLFW 윈도우 생성 실패" << std::endl; // 오류 메시지 출력
+        glfwTerminate(); // GLFW 종료
+        return -1; // 프로그램 종료
+    }
+
+    // 현재 컨텍스트를 생성한 윈도우로 설정
     glfwMakeContextCurrent(window);
+    // 마우스 버튼 콜백 함수 등록
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    // 마우스 커서 위치 콜백 함수 등록
+    glfwSetCursorPosCallback(window, cursor_position_callback);
 
-    // 오류 콜백 함수 설정
-    glfwSetErrorCallback(errorCallback);
+    glfwSwapInterval(1); // 수직 동기화 사용
 
-    // 키 콜백 함수 설정
-    glfwSetKeyCallback(window, keyCallback);
-
-    // 마우스 버튼 콜백 함수 설정
-    glfwSetMouseButtonCallback(window, mouseButtonCallback);
-
-    // 마우스 이동 콜백 함수 설정
-    glfwSetCursorPosCallback(window, cursorPositionCallback);
-
-    while (!glfwWindowShouldClose(window)) // 창이 닫혀야 하는지 확인
-    {
-        glClearColor(currentColor[0], currentColor[1], currentColor[2], currentColor[3]); // 현재 색으로 창 지우기
-        glClear(GL_COLOR_BUFFER_BIT); // 버퍼 지우기
-
-        glfwSwapBuffers(window); // 프론트 버퍼와 백 버퍼 교체
+    // 렌더링 루프
+    while (!glfwWindowShouldClose(window)) {
         glfwPollEvents(); // 이벤트 처리
+
+        // 마우스 오른쪽 버튼이 눌려 있으면
+        if (rightbtnDown)
+            glClearColor(1.0f, 0.0f, 0.0f, 1.0f); // 빨간색 
+        // 마우스 왼쪽 버튼이 눌려 있으면
+        else if (leftbtnDown)
+            glClearColor(0.0f, 1.0f, 0.0f, 1.0f); // 녹색 
+        else
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // 검정색 
+
+        glClear(GL_COLOR_BUFFER_BIT); // 버퍼를 지우고 새로운 프레임을 그림
+        glfwSwapBuffers(window); // 프레임을 화면에 표시
     }
 
-    glfwTerminate(); // GLFW 종료
-    return 0;
+    // GLFW 종료
+    glfwTerminate();
+    return 0; // 프로그램 종료
 }
