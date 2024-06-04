@@ -3,8 +3,8 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+const int WIDTH = 1920;
+const int HEIGHT = 1080;
 
 // 네모의 초기 위치 및 속도
 float rectX = -0.7f;
@@ -62,7 +62,7 @@ int main() {
 
         // 점프하는 네모를 그린다
         glColor3f(1.0f, 0.0f, 0.0f); // 빨간색
-        drawRectangle(rectX, rectY, 0.2f, 0.2f);
+        drawRectangle(rectX, rectY, 0.1f, 0.13f);
 
         // 점프 로직
         if (isJumping) {
