@@ -1,86 +1,111 @@
 ﻿#pragma comment(lib, "Opengl32.lib")
-
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <chrono>
 
-const int WIDTH = 1920;
-const int HEIGHT = 1080;
+const float gravity = 9.8f;
+const float jumpVelocity = 5.0f;
+const float groundY = -0.8f; // Adjusting ground position to make it thinner
+const float squareSize = 0.5f;
 
-// 네모의 초기 위치 및 속도
-float rectX = -0.7f;
-float rectY = -0.5f;
-float velocityY = 0.0f;
-const float GRAVITY = -0.0004f; // 중력 가속도 
-const float JUMP_VELOCITY = 0.016f; // 점프 초기 속도
-bool isJumping = false;
-double lastTime = 0.0;
+struct Square {
+    float x, y;
+    float velocityY;
+};
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && !isJumping) {
-        velocityY = JUMP_VELOCITY;
-        isJumping = true;
+// Initialize the square above the ground at y = 1.0f
+// Adjusting initial position according to OpenGL coordinates
+Square player = { -0.625f, 0.583f, 0.0f }; // Adjusted initial position
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && player.y <= groundY + squareSize / 2 + 0.01f)
+    {
+        player.velocityY = jumpVelocity;  // Jump when space is pressed
     }
 }
 
-void drawRectangle(float x, float y, float width, float height) {
+void errorCallback(int error, const char* description)
+{
+    std::cerr << "GLFW Error: " << description << std::endl;
+}
+
+void render()
+{
+    glClearColor(0.53f, 0.81f, 0.98f, 1.0f); // Light blue background
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Draw ground
+    glColor3f(0.0f, 1.0f, 0.0f); // Green ground
     glBegin(GL_QUADS);
-    glVertex2f(x, y);
-    glVertex2f(x + width, y);
-    glVertex2f(x + width, y + height);
-    glVertex2f(x, y + height);
+    glVertex2f(-1.0f, groundY);
+    glVertex2f(1.0f, groundY);
+    glVertex2f(1.0f, groundY - 0.2f); // Adjusting ground thickness
+    glVertex2f(-1.0f, groundY - 0.2f);
+    glEnd();
+
+    // Draw player square (red)
+    glColor3f(1.0f, 0.0f, 0.0f); // Red player square
+    glBegin(GL_QUADS);
+    glVertex2f(player.x - squareSize / 2 + 0.625, player.y - squareSize / 2);
+    glVertex2f(player.x + squareSize / 2 + 0.625, player.y - squareSize / 2);
+    glVertex2f(player.x + squareSize / 2 + 0.625, player.y + squareSize / 2);
+    glVertex2f(player.x - squareSize / 2 + 0.625, player.y + squareSize / 2);
     glEnd();
 }
 
-int main() {
-    if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
-        return -1;
-    }
+void update(float deltaTime)
+{
+    // Apply gravity
+    player.velocityY -= gravity * deltaTime;
+    // Update position
+    player.y += player.velocityY * deltaTime;
 
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Jumping Rectangle", NULL, NULL);
-    if (!window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
+    // Collision with ground
+    if (player.y - squareSize / 2 < groundY)
+    {
+        // Adjust position
+        player.y = groundY + squareSize / 2;
+        // Stop falling
+        player.velocityY = 0;
+    }
+}
+
+int main(void)
+{
+    if (!glfwInit())
+        return -1;
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Dinosaur Run", NULL, NULL);
+
+    if (!window)
+    {
         glfwTerminate();
         return -1;
     }
 
     glfwMakeContextCurrent(window);
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetErrorCallback(errorCallback);
+    glfwSetKeyCallback(window, keyCallback);
 
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(window))
+    {
+        // Get delta time
+        static double previousTime = glfwGetTime();
         double currentTime = glfwGetTime();
-        double deltaTime = currentTime - lastTime;
-        lastTime = currentTime;
+        float deltaTime = static_cast<float>(currentTime - previousTime);
+        previousTime = currentTime;
 
-        // 배경을 흰색으로 초기화
-        glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        // Update
+        update(deltaTime);
 
-        // 바닥을 그린다 (고정된 사각형)
-        glColor3f(0.0f, 1.0f, 0.0f); // 초록색
-        drawRectangle(-1.0f, -1.0f, 3.0f, 0.5f);
-
-        // 점프하는 네모를 그린다
-        glColor3f(1.0f, 0.0f, 0.0f); // 빨간색
-        drawRectangle(rectX, rectY, 0.1f, 0.13f);
-
-        // 점프 로직
-        if (isJumping) {
-            rectY += velocityY * deltaTime * 100;
-            velocityY += GRAVITY * deltaTime * 100; // 중력 효과
-
-            if (rectY <= -0.5f) { // 바닥에 닿으면
-                rectY = -0.5f;
-                isJumping = false;
-                velocityY = 0.0f;
-            }
-        }
-
+        // Render
+        glLoadIdentity();
+        render();
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
 }
