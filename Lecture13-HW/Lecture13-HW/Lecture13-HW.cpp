@@ -5,7 +5,7 @@
 
 const float gravity = 9.8f;
 const float jumpVelocity = 5.0f;
-const float groundY = -0.8f; // Adjusting ground position to make it thinner
+const float groundY = -0.8f; 
 const float squareSize = 0.5f;
 
 struct Square {
@@ -13,9 +13,8 @@ struct Square {
     float velocityY;
 };
 
-// Initialize the square above the ground at y = 1.0f
-// Adjusting initial position according to OpenGL coordinates
-Square player = { -0.625f, 0.583f, 0.0f }; // Adjusted initial position
+
+Square player = { -0.625f, 0.583f, 0.0f }; 
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -32,20 +31,20 @@ void errorCallback(int error, const char* description)
 
 void render()
 {
-    glClearColor(0.53f, 0.81f, 0.98f, 1.0f); // Light blue background
+    glClearColor(0.53f, 0.81f, 0.98f, 1.0f); 
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Draw ground
-    glColor3f(0.0f, 1.0f, 0.0f); // Green ground
+    glColor3f(0.0f, 1.0f, 0.0f); 
     glBegin(GL_QUADS);
     glVertex2f(-1.0f, groundY);
     glVertex2f(1.0f, groundY);
-    glVertex2f(1.0f, groundY - 0.2f); // Adjusting ground thickness
+    glVertex2f(1.0f, groundY - 0.2f); 
     glVertex2f(-1.0f, groundY - 0.2f);
     glEnd();
 
     // Draw player square (red)
-    glColor3f(1.0f, 0.0f, 0.0f); // Red player square
+    glColor3f(1.0f, 0.0f, 0.0f); 
     glBegin(GL_QUADS);
     glVertex2f(player.x - squareSize / 2 + 0.625, player.y - squareSize / 2);
     glVertex2f(player.x + squareSize / 2 + 0.625, player.y - squareSize / 2);
@@ -56,17 +55,17 @@ void render()
 
 void update(float deltaTime)
 {
-    // Apply gravity
+    
     player.velocityY -= gravity * deltaTime;
-    // Update position
+    
     player.y += player.velocityY * deltaTime;
 
-    // Collision with ground
+   
     if (player.y - squareSize / 2 < groundY)
     {
-        // Adjust position
+        
         player.y = groundY + squareSize / 2;
-        // Stop falling
+        
         player.velocityY = 0;
     }
 }
@@ -90,16 +89,16 @@ int main(void)
 
     while (!glfwWindowShouldClose(window))
     {
-        // Get delta time
+       
         static double previousTime = glfwGetTime();
         double currentTime = glfwGetTime();
         float deltaTime = static_cast<float>(currentTime - previousTime);
         previousTime = currentTime;
 
-        // Update
+        
         update(deltaTime);
 
-        // Render
+       
         glLoadIdentity();
         render();
         glfwSwapBuffers(window);
